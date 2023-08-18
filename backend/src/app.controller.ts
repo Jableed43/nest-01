@@ -1,19 +1,21 @@
-import { Controller, Get, Res, Post, Delete, Put } from '@nestjs/common';
+import { Controller, Get, Res, Post, Delete, Put, Body } from '@nestjs/common';
 import { Response } from 'express';
-import { join } from 'path';
-
+import {SongsService} from './songs/songs.service'
 
 @Controller('songs')
 export class SongsController {
+
+  constructor(private songsService: SongsService){}
+
   @Get()
-  getSongs(@Res() res: Response ){
-   const songs = join(__dirname, '../data/songs.json')
-   res.sendFile(songs)
+  getAll(@Res() res: Response ){
+   res.send({data: this.songsService.getAll(), status: true, code:200})
   }
 
   @Post()
-  postSongs(){
-   return 'nuevo registro'
+  create(@Body() song: any){
+   this.songsService.create(song)
+   return {message: 'Data saved', song: song, status: true, code: 201}
   }
 
   @Delete()
