@@ -9,7 +9,11 @@ export class SongsService {
     private songs = join(__dirname, '../../data/songs.json')
 
     getAll(){
-        return readParse();
+        try {
+            return readParse();
+        } catch (error) {
+            throw new Error('Cannot get data')
+        }
     }
 
     async create(song: any){
@@ -19,13 +23,13 @@ export class SongsService {
             const data = readParse();
             data.push(newPista);
             fs.writeFileSync(this.songs, JSON.stringify(data, null, 2))
-            return data
+            return {message: "song created", data: newPista, success: true}
         } catch (error) {
             throw new Error("Created failed");
         }
     }
 
-    deleteSongById(id: string){
+    deleteSongById(id: string): {success: boolean, message: string}{
 try {
     //traer los datos
     const data = readParse();
@@ -37,16 +41,16 @@ try {
         data.splice(songFound, 1)
         //guardar el array de songs en el archivo json
         fs.writeFileSync(this.songs, JSON.stringify(data, null, 2))
-        return true;
+        return {success: true, message: `Song with id: ${id}, was deleted`}
     } else {
-        return false;
+        return {success: false, message: `Song with id: ${id}, was not found`}
     }
 } catch (error) {
     throw new Error(`Delete Failed`)
 }
     }
 
-    updateSongById(id: number, body: any){
+    updateSongById(id: number, body: any): {success: boolean, message: string, data?: any}{
 try {
     const data = readParse();
     const index = data.findIndex((song : {id : number}) => song.id === id )
@@ -57,10 +61,24 @@ try {
         //guardamos en el registro lo editado
         data[index] = editedSong
         fs.writeFileSync(this.songs, JSON.stringify(data, null, 2))
-        return editedSong;
-    } return null;
+        return {success: true, message: `Song with id: ${id}, was edited`, data: editedSong}
+    } return {success: false, message: `Song with id: ${id}, was not found`};
 } catch (error) {
     throw new Error(`Update Failed`)
 }
+    }
+
+    getById(id: number) : {data?: any, success: boolean, message: string}{
+        try {
+            const data = readParse();
+            //buscamos indice de la cancion que buscamos a traves del id
+            const index = data.findIndex((song: { id: number; }) => song.id === id);
+            if(index >= 0){
+                //returnamos la cancion si la encuentra en : data[index]
+                return {success: true, message: 'Song found', data: data[index]}
+            } else return {success: false, message: 'Song not found'}
+        } catch (error) {
+            throw new Error("Error getting song");
+        }
     }
 }

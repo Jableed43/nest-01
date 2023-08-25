@@ -96,6 +96,27 @@
     "artist": "La Renga"
   },
   {
-    "id": 18
+    "id": 18,
+    "title": "Blind",
+    "duration": 216,
+    "artist": "The We"
+  },
+  {
+    "id": 19,
+    "title": "Blind",
+    "duration": 216,
+    "artist": "The We"
+  },
+  {
+    "id": 20,
+    "title": "Blind",
+    "duration": 216,
+    "artist": "The We"
+  },
+  {
+    "id": 21,
+    "title": "Blind",
+    "duration": 216,
+    "artist": "The We"
   }
 ]
