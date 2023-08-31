@@ -1,81 +1,104 @@
-import { Controller, Get, Res, Post, Delete, Put, Body, Param, HttpStatus, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Res,
+  Post,
+  Delete,
+  Put,
+  Body,
+  Param,
+  HttpStatus,
+  NotFoundException,
+  BadRequestException,
+  HttpCode,
+} from '@nestjs/common';
 import { Response } from 'express';
-import {SongsService} from './songs/songs.service'
+import { SongService } from './songs/song.service';
+import { Song, BodySong } from './songs/song.interface';
 
 @Controller('songs')
-export class SongsController {
-
-  constructor(private songsService: SongsService){}
+export class SongController {
+  constructor(private songService: SongService) {}
 
   @Get()
-  getAll(@Res() res: Response ){
- try {
-  const serviceResponse = this.songsService.getAll();
-  //returna estado 200 y envia todos los registros
-  return res.status(HttpStatus.OK).send(serviceResponse)
- } catch (error) {
-  throw new NotFoundException('Data not found')
- }
+  async getAll(@Res() res: Response): Promise<Response<Song[]>> {
+    try {
+      const serviceResponse = await this.songService.getAll();
+      //returna estado 200 y envia todos los registros
+      return res.status(HttpStatus.OK).send(serviceResponse);
+    } catch (error) {
+      throw new NotFoundException('Data not found');
+    }
   }
 
   @Get(':id')
-  getById(@Param('id') id: string, @Res() res: Response ){
-  try {
-    const parsedID = parseInt(id, 10);
-    const serviceResponse = this.songsService.getById(parsedID);
-    //si la respuesta del servicio da true, entonces ingresa por ese lado
-    if(serviceResponse.success){
-      return res.status(HttpStatus.OK).send(serviceResponse)
-    } else {
-      return res.status(HttpStatus.NOT_FOUND).send(serviceResponse)
+  async getById(
+    @Param('id') id: string,
+    @Res() res: Response,
+  ): Promise<Response<Song>> {
+    try {
+      const parsedID = parseInt(id, 10);
+      const serviceResponse = await this.songService.getById(parsedID);
+      //si la respuesta del servicio da true, entonces ingresa por ese lado
+      if (Object.keys(serviceResponse).length) {
+        return res.status(HttpStatus.OK).send(serviceResponse);
+      } else {
+        return res
+          .status(HttpStatus.NOT_FOUND)
+          .json({ message: 'song not found' });
+      }
+    } catch (error) {
+      throw new BadRequestException(`Cannot get song with id ${id}`);
     }
-  } catch (error) {
-    throw new BadRequestException(`Cannot get song with id ${id}`)
-  }
   }
 
   @Post()
-  create(@Body() song: any, @Res() res: Response){
-try {
-  this.songsService.create(song)
-  //retorna codigo 201, created no retorna datos
-  return res.status(HttpStatus.CREATED)
-} catch (error) {
-  throw new BadRequestException('Song creation failed')
-}
-  }
-  
-  @Delete(':id')
-  deleteSongById(@Param('id') id: string, @Res() res: Response){
+  async create(@Body() song: BodySong, @Res() res: Response): Promise<any> {
     try {
-      const serviceResponse = this.songsService.deleteSongById(id);
-      // en ...serviceResponse tomamos los datos que se encuentran dentro del retorno
-      if(serviceResponse.success){
-        return res.status(HttpStatus.OK).send({...serviceResponse})
-      }
-      else {
-        return res.status(HttpStatus.NOT_FOUND).send({...serviceResponse})
-      }
-      
+      await this.songService.create(song);
+      return res.status(HttpStatus.CREATED).send();
     } catch (error) {
-      throw new NotFoundException('Delete failed')
+      throw new BadRequestException('Song creation failed');
+    }
+  }
+
+  @Delete(':id')
+  async deleteSongById(
+    @Param('id') id: number,
+    @Res() res: Response,
+  ): Promise<any> {
+    try {
+      const serviceResponse = await this.songService.deleteSongById(id);
+
+      if (serviceResponse) {
+        return res.status(HttpStatus.OK).send(serviceResponse);
+      } else {
+        return res.status(HttpStatus.NOT_FOUND).send();
+      }
+    } catch (error) {
+      throw new NotFoundException('Delete failed');
     }
   }
 
   //path param
   @Put(':id')
-  updateSongById(@Param('id') id: string, @Body() body: any, @Res() res: Response){
+  async updateSongById(
+    @Param('id') id: string,
+    @Body() body: Song,
+    @Res() res: Response,
+  ): Promise<any> {
     try {
       const parsedID = parseInt(id, 10);
-      const serviceResponse = this.songsService.updateSongById(parsedID, body);
-      if(serviceResponse.success){
-        //es importante usar el spread operator para traer los datos del objeto de la respuesta
-        return res.status(HttpStatus.OK).send({...serviceResponse, code: HttpStatus.OK})
-      } else {
-        return res.status(HttpStatus.NOT_FOUND).send({...serviceResponse, code: HttpStatus.NOT_FOUND})
-      }
+      const success = await this.songService.updateSongById(parsedID, body);
+
+      const statusCode = success ? HttpStatus.OK : HttpStatus.NOT_FOUND;
+
+      return res.status(statusCode).send({
+        success,
+        code: statusCode,
+      });
     } catch (error) {
-      throw new BadRequestException(`Update failed`)
+      throw new BadRequestException(`Update failed`);
     }
   }
 }
