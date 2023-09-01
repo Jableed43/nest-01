@@ -10,21 +10,23 @@ import {
   HttpStatus,
   NotFoundException,
   BadRequestException,
-  HttpCode,
+  ValidationPipe,
+  UsePipes 
 } from '@nestjs/common';
 import { Response } from 'express';
 import { SongService } from './songs/song.service';
-import { Song, BodySong } from './songs/song.interface';
-
+import { Song } from './songs/song.interface';
+import {songDto} from './songs/song.dto'
+import {song_idDTO} from './songs/song_id.dto'
 @Controller('songs')
 export class SongController {
   constructor(private songService: SongService) {}
 
   @Get()
-  async getAll(@Res() res: Response): Promise<Response<Song[]>> {
+  async getAll(@Res() res: Response): Promise<Response<song_idDTO[]>> {
     try {
       const serviceResponse = await this.songService.getAll();
-      //returna estado 200 y envia todos los registros
+      //retorna estado 200 y envia todos los registros
       return res.status(HttpStatus.OK).send(serviceResponse);
     } catch (error) {
       throw new NotFoundException('Data not found');
@@ -33,12 +35,11 @@ export class SongController {
 
   @Get(':id')
   async getById(
-    @Param('id') id: string,
+    @Param('id') id: number,
     @Res() res: Response,
   ): Promise<Response<Song>> {
     try {
-      const parsedID = parseInt(id, 10);
-      const serviceResponse = await this.songService.getById(parsedID);
+      const serviceResponse = await this.songService.getById(id);
       //si la respuesta del servicio da true, entonces ingresa por ese lado
       if (Object.keys(serviceResponse).length) {
         return res.status(HttpStatus.OK).send(serviceResponse);
@@ -53,7 +54,8 @@ export class SongController {
   }
 
   @Post()
-  async create(@Body() song: BodySong, @Res() res: Response): Promise<any> {
+  @UsePipes(new ValidationPipe({ transform: true }))
+  async create(@Body() song: songDto, @Res() res: Response): Promise<any> {
     try {
       await this.songService.create(song);
       return res.status(HttpStatus.CREATED).send();
@@ -82,14 +84,14 @@ export class SongController {
 
   //path param
   @Put(':id')
+  @UsePipes(new ValidationPipe({ transform: true }))
   async updateSongById(
-    @Param('id') id: string,
-    @Body() body: Song,
+    @Param('id') id: number,
+    @Body() body: songDto,
     @Res() res: Response,
   ): Promise<any> {
     try {
-      const parsedID = parseInt(id, 10);
-      const success = await this.songService.updateSongById(parsedID, body);
+      const success = await this.songService.updateSongById(id, body);
 
       const statusCode = success ? HttpStatus.OK : HttpStatus.NOT_FOUND;
 

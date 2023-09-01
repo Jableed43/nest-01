@@ -1,14 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { join } from 'path';
-import * as fs from 'fs';
-import { readParse, createID } from '../utils/utils';
 const BASE_URL = 'http://localhost:3030/songs/';
-import { Song, BodySong } from './song.interface';
+import { Song} from './song.interface';
+import {songDto} from './song.dto'
 
 @Injectable()
 export class SongService {
-  private songs = join(__dirname, '../../data/songs.json');
-
   async getAll(): Promise<Song[]> {
     const res = await fetch(BASE_URL);
     const parsed = res.json();
@@ -21,7 +17,7 @@ export class SongService {
     return parsed;
   }
 
-  async create(song: BodySong): Promise<any> {
+  async create(song: songDto): Promise<any> {
     try {
       const id = await this.setId();
       const { title, duration, artist } = song;
@@ -54,7 +50,7 @@ export class SongService {
     return parsed;
   }
 
-  async updateSongById(id: number, body: Song): Promise<boolean> {
+  async updateSongById(id: number, body: songDto): Promise<boolean> {
     const isTrack = await this.getById(id);
 
     if (!Object.keys(isTrack).length) {
